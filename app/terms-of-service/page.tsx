@@ -16,8 +16,8 @@ const TermsOfService = () => {
         <section>
           <h2 className="text-2xl font-semibold mb-4">2. Definitions</h2>
           <p className="text-gray-600 mb-4">
-            "Service" refers to the EZY Interview platform, including all features, functionalities, and user interfaces.
-            "User" refers to any individual or entity that accesses or uses the Service.
+            &quot;Service&quot; refers to the EZY Interview platform, including all features, functionalities, and user interfaces.
+            &quot;User&quot; refers to any individual or entity that accesses or uses the Service.
           </p>
         </section>
 

@@ -1,11 +1,9 @@
 "use client";
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '../hooks/useAuth';
 import type { CVProfile, AnalysisResults } from '../types';
 import AuthenticatedLayout from "../components/AuthenticatedLayout";
 import JobDescriptionInput from "../components/analysis/JobDescriptionInput";
-import CVUpload from "../components/analysis/CVUpload";
 import ResultsDisplay from "../components/analysis/ResultsDisplay";
 import ErrorMessage from "../components/analysis/ErrorMessage";
 import Spinner from "../components/analysis/Spinner";
@@ -14,7 +12,6 @@ import RequireAuth from "../components/auth/RequireAuth";
 
 export default function AnalysisPage() {
   const { user } = useAuth();
-  const router = useRouter();
   
   const [cvProfile, setCvProfile] = useState<CVProfile | null>(null);
   const [jobDescription, setJobDescription] = useState("");
