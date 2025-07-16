@@ -16,6 +16,9 @@ interface DecodedToken {
 
 export const runtime = "nodejs";
 
+// Prevent pre-rendering of this route
+export const dynamic = "force-dynamic";
+
 // Initialize Firebase Admin if not already initialized
 if (!getApps().length) {
   initializeApp({
