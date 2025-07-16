@@ -89,8 +89,9 @@ async function generateQuestions(cv: string, jobDescription: string): Promise<An
   const questionKeywords = extractKeywords(cv);
   const answerKeywords = extractKeywords(jobDescription);
 
-  const questionMatches = findMatches(questionKeywords) as QuestionMatch[];
-  const answerMatches = findMatches(answerKeywords) as AnswerMatch[];
+  // Find matches (currently unused in mock implementation)
+  findMatches(questionKeywords);
+  findMatches(answerKeywords);
 
   return {
     Behavioral: behavioralQuestions,
