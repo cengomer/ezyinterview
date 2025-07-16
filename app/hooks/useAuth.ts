@@ -9,6 +9,7 @@ import {
   signInWithPopup,
   User,
 } from "firebase/auth";
+import { FirebaseError } from "firebase/app";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -28,8 +29,12 @@ export function useAuth() {
     setError(null);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof FirebaseError) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -40,8 +45,12 @@ export function useAuth() {
     setError(null);
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof FirebaseError) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -52,8 +61,12 @@ export function useAuth() {
     setError(null);
     try {
       await signOut(auth);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof FirebaseError) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -64,8 +77,12 @@ export function useAuth() {
     setError(null);
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof FirebaseError) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }
