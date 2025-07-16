@@ -6,13 +6,32 @@ import { doc, getDoc } from "firebase/firestore";
 import Spinner from "../../components/analysis/Spinner";
 import ErrorMessage from "../../components/analysis/ErrorMessage";
 
+// Define interfaces for type safety
+interface QuestionAnswer {
+  question: string;
+  answer: string;
+}
+
+interface HistoryResults {
+  Behavioral: QuestionAnswer[];
+  Technical: QuestionAnswer[];
+  General: QuestionAnswer[];
+}
+
+interface History {
+  title?: string;
+  jobDescription?: string;
+  results: HistoryResults;
+  createdAt: Date;
+}
+
 export default function HistoryDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { id } = params as { id: string };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<any>(null);
+  const [history, setHistory] = useState<History | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -23,11 +42,12 @@ export default function HistoryDetailPage() {
         const docRef = doc(db, "histories", id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setHistory(docSnap.data());
+          setHistory(docSnap.data() as History);
         } else {
           setError("History not found.");
         }
-      } catch (err) {
+      } catch (error) {
+        console.error("Error fetching history:", error);
         setError("Failed to load history details.");
       } finally {
         setLoading(false);
@@ -74,7 +94,7 @@ export default function HistoryDetailPage() {
           <div key={cat} className="mb-4">
             <h3 className="font-medium text-blue-700 mb-2">{cat} Questions</h3>
             <ul className="space-y-2">
-              {history.results?.[cat]?.map((qa: any, idx: number) => (
+              {history.results?.[cat as keyof HistoryResults]?.map((qa: QuestionAnswer, idx: number) => (
                 <li key={idx} className="bg-white border rounded p-3">
                   <div className="font-semibold text-gray-900 mb-1">Q: {qa.question}</div>
                   <div className="text-gray-700">A: {qa.answer}</div>
