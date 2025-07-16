@@ -20,9 +20,18 @@ export default function JobInput({ onJobDescriptionChange }: { onJobDescriptionC
           value={jobDescription}
           maxLength={maxChars}
           onChange={e => {
-            setJobDescription(e.target.value);
-            if (onJobDescriptionChange) onJobDescriptionChange(e.target.value);
-            // Optionally, add validation here and setError if needed
+            const newValue = e.target.value;
+            setJobDescription(newValue);
+            if (onJobDescriptionChange) onJobDescriptionChange(newValue);
+            
+            // Basic validation
+            if (newValue.length < minChars) {
+              setError(`Please enter at least ${minChars} characters`);
+            } else if (newValue.length > maxChars) {
+              setError(`Please enter no more than ${maxChars} characters`);
+            } else {
+              setError("");
+            }
           }}
         />
         <div className="flex items-center justify-between mt-2 text-sm">
