@@ -7,6 +7,32 @@ export default function FileUpload({ onFileSelected }: { onFileSelected?: (file:
   const [error, setError] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Basic file validation
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    
+    if (selectedFile) {
+      // Basic validation
+      if (!selectedFile.type.includes('pdf')) {
+        setError('Please select a PDF file');
+        setFile(null);
+        onFileSelected?.(null);
+        return;
+      }
+      
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        setError('File size must be less than 5MB');
+        setFile(null);
+        onFileSelected?.(null);
+        return;
+      }
+
+      setError('');
+      setFile(selectedFile);
+      onFileSelected?.(selectedFile);
+    }
+  };
+
   // TODO: Implement drag-and-drop logic, file validation, and error handling
 
   return (
@@ -27,7 +53,7 @@ export default function FileUpload({ onFileSelected }: { onFileSelected?: (file:
             type="file"
             accept="application/pdf"
             className="hidden"
-            // TODO: Add onChange handler for file selection
+            onChange={handleFileChange}
           />
         </div>
         {file && (
