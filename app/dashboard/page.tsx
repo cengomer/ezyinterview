@@ -18,6 +18,28 @@ import {
   ArcElement,
 } from "chart.js";
 
+// Define interfaces for type safety
+interface Analysis {
+  id: string;
+  userId: string;
+  createdAt: Timestamp;
+  title?: string;
+  jobDescription?: string;
+  results: {
+    Behavioral: Array<{ question: string; answer: string }>;
+    Technical: Array<{ question: string; answer: string }>;
+    General: Array<{ question: string; answer: string }>;
+  };
+}
+
+interface CVProfile {
+  summary: string;
+  fileName: string;
+  updatedAt: Timestamp;
+  extractedText: string;
+  fileSize: number;
+}
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -34,8 +56,8 @@ export default function DashboardPage() {
   const [analysisCount, setAnalysisCount] = useState<number>(0);
   const [lastAnalysisDate, setLastAnalysisDate] = useState<string>("");
   const [loadingStats, setLoadingStats] = useState(true);
-  const [recentAnalyses, setRecentAnalyses] = useState<any[]>([]);
-  const [cvProfile, setCvProfile] = useState<any>(null);
+  const [recentAnalyses, setRecentAnalyses] = useState<Analysis[]>([]);
+  const [cvProfile, setCvProfile] = useState<CVProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
   useEffect(() => {
@@ -51,9 +73,9 @@ export default function DashboardPage() {
         );
         const querySnapshot = await getDocs(q);
         setAnalysisCount(querySnapshot.size);
-        const recent: any[] = [];
+        const recent: Analysis[] = [];
         Array.from(querySnapshot.docs).slice(0, 5).forEach((doc) => {
-          recent.push({ id: doc.id, ...doc.data() });
+          recent.push({ id: doc.id, ...doc.data() } as Analysis);
         });
         setRecentAnalyses(recent);
         if (!querySnapshot.empty) {
@@ -69,7 +91,8 @@ export default function DashboardPage() {
         } else {
           setLastAnalysisDate("");
         }
-      } catch (err) {
+      } catch (error) {
+        console.error("Error fetching stats:", error);
         setAnalysisCount(0);
         setLastAnalysisDate("");
         setRecentAnalyses([]);
@@ -88,11 +111,12 @@ export default function DashboardPage() {
         const userDocRef = firestoreDoc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists() && userDoc.data().cvProfile) {
-          setCvProfile(userDoc.data().cvProfile);
+          setCvProfile(userDoc.data().cvProfile as CVProfile);
         } else {
           setCvProfile(null);
         }
-      } catch (err) {
+      } catch (error) {
+        console.error("Error fetching profile:", error);
         setCvProfile(null);
       } finally {
         setLoadingProfile(false);
