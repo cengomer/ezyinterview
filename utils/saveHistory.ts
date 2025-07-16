@@ -1,36 +1,29 @@
 // my-app/utils/saveHistory.ts
-import { db } from "../app/firebase/firebaseClient";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { User } from "firebase/auth";
+import type { AnalysisResults } from '../app/types';
 
-export async function saveHistory({
-  user,
-  jobDescription,
-  cvName,
-  results,
-  title,
-}: {
-  user: User;
+interface SaveHistoryParams {
   jobDescription: string;
-  cvName?: string;
-  results: any;
+  cvContent: string;
+  results: AnalysisResults;
   title?: string;
-}) {
-  if (!user) throw new Error("User not authenticated");
-  const docData = {
-    userId: user.uid,
-    createdAt: serverTimestamp(),
-    jobDescription,
-    cvName,
-    results,
-    ...(title ? { title } : {}),
-  };
-  console.log("[saveHistory] Attempting to save:", docData);
+  timestamp: string;
+}
+
+export async function saveHistory(params: SaveHistoryParams): Promise<void> {
   try {
-    const docRef = await addDoc(collection(db, "histories"), docData);
-    console.log("[saveHistory] Saved successfully with ID:", docRef.id);
-  } catch (err) {
-    console.error("[saveHistory] Error saving history:", err);
-    throw err;
+    const response = await fetch('/api/history/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save history');
+    }
+  } catch (error) {
+    console.error('Error saving history:', error);
+    throw error;
   }
 }
