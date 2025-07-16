@@ -3,11 +3,9 @@ import Image from "next/image";
 export default function UserAvatar({
   name,
   avatarUrl,
-  collapsed,
 }: {
   name: string;
   avatarUrl: string;
-  collapsed: boolean;
 }) {
   return (
     <div className="flex flex-col items-center">
