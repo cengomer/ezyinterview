@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCVProfile } from "../../../utils/saveCVProfile";
-import { auth } from "../../firebase/firebaseClient";
 import { getAuth } from "firebase-admin/auth";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { User } from "firebase/auth";
+
+interface CVProfile {
+  summary: string;
+  fileName: string;
+  updatedAt: string;
+}
 
 export const runtime = "nodejs";
 
@@ -29,16 +35,32 @@ export async function GET(req: NextRequest) {
     
     try {
       decodedToken = await getAuth().verifyIdToken(token);
-    } catch (error) {
+    } catch {
       return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 });
     }
 
+    // Create a User object with all required properties
     const user = {
       uid: decodedToken.uid,
       email: decodedToken.email,
-    };
+      emailVerified: decodedToken.email_verified || false,
+      displayName: decodedToken.name || null,
+      photoURL: decodedToken.picture || null,
+      phoneNumber: decodedToken.phone_number || null,
+      providerId: 'firebase',
+      isAnonymous: false,
+      metadata: {},
+      providerData: [],
+      refreshToken: '',
+      tenantId: null,
+      delete: async () => { throw new Error('Not implemented'); },
+      getIdToken: async () => token,
+      getIdTokenResult: async () => ({ claims: {}, token: '', authTime: '', issuedAtTime: '', expirationTime: '', signInProvider: null }),
+      reload: async () => {},
+      toJSON: () => ({ uid: decodedToken.uid })
+    } as unknown as User;  // Use double assertion to bypass type checking since we know this is safe for our use case
 
-    const cvProfile = await getCVProfile(user as any);
+    const cvProfile = await getCVProfile(user);
     
     if (!cvProfile) {
       return NextResponse.json({ 
@@ -56,8 +78,8 @@ export async function GET(req: NextRequest) {
       }
     });
 
-  } catch (err: any) {
-    console.error("Get CV profile API error:", err);
+  } catch (err: unknown) {
+    console.error("Get CV profile API error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ 
       success: false, 
       error: "Something went wrong - please refresh and try again." 
