@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCVProfile } from "../../../utils/saveCVProfile";
+import { getCVProfile, CVProfile } from "../../../utils/saveCVProfile";
 import { getAuth } from "firebase-admin/auth";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { User } from "firebase/auth";
@@ -12,12 +12,6 @@ interface DecodedToken {
   name?: string;
   picture?: string;
   phone_number?: string;
-}
-
-interface CVProfile {
-  summary: string;
-  fileName: string;
-  updatedAt: string;
 }
 
 export const runtime = "nodejs";
@@ -90,14 +84,16 @@ export async function GET(req: NextRequest) {
       }, { status: 404 });
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    const response: { success: true; cvProfile: Pick<CVProfile, 'summary' | 'fileName' | 'updatedAt'> } = {
+      success: true,
       cvProfile: {
         summary: cvProfile.summary,
         fileName: cvProfile.fileName,
         updatedAt: cvProfile.updatedAt,
       }
-    });
+    };
+
+    return NextResponse.json(response);
 
   } catch (err: unknown) {
     console.error("Get CV profile API error:", err instanceof Error ? err.message : err);
