@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { db } from "../firebase/firebaseClient";
-import { collection, query, where, orderBy, getDocs, Timestamp } from "firebase/firestore";
+import { collection, query, where, orderBy, getDocs, Timestamp, FirestoreError } from "firebase/firestore";
 import RequireAuth from "../components/auth/RequireAuth";
 import Spinner from "../components/analysis/Spinner";
 import { useRouter } from "next/navigation";
@@ -71,8 +71,9 @@ export default function HistoryPage() {
         
         console.log("[HistoryPage] Fetched history:", historyData);
         setHistory(historyData);
-      } catch (err: any) {
-        console.error("[HistoryPage] Error fetching history:", err);
+      } catch (err: unknown) {
+        const error = err as FirestoreError;
+        console.error("[HistoryPage] Error fetching history:", error);
         setError("Failed to load history. Please try again.");
       } finally {
         setLoading(false);
