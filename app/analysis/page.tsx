@@ -20,48 +20,36 @@ interface CVProfile {
 export default function AnalysisPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [cvProfile, setCvProfile] = useState<CVProfile | null>(null);
+  const [cvProfile, setCvProfile] = useState<any>(null);
   const [jobDescription, setJobDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<any>(null);
   const [title, setTitle] = useState("");
 
-  // Load CV profile on component mount
-  useEffect(() => {
-    if (user) {
-      loadCVProfile();
-    }
-  }, [user]);
-
   const loadCVProfile = async () => {
     if (!user) return;
     
-    setLoading(true);
     try {
-      const token = await user.getIdToken();
-      const res = await fetch("/api/get-cv-profile", {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      });
-      const data = await res.json();
+      setLoading(true);
+      const response = await fetch('/api/get-cv-profile');
+      const data = await response.json();
       
       if (data.success) {
-        setCvProfile(data.cvProfile);
-        setError(null);
+        setCvProfile(data.profile);
       } else {
-        setCvProfile(null);
-        setError(data.error);
+        setError(data.error || 'Failed to load CV profile');
       }
-    } catch (err: any) {
-      console.error("Failed to load CV profile:", err);
-      setCvProfile(null);
-      setError("Failed to load CV profile. Please try again.");
+    } catch (err) {
+      setError('Failed to load CV profile');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadCVProfile();
+  }, [loadCVProfile]);
 
   const handleGenerate = async () => {
     if (!cvProfile) {

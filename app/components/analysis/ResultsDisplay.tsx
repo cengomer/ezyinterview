@@ -21,15 +21,15 @@ const categories: Array<keyof ResultsDisplayProps["results"]> = [
 ];
 
 export default function ResultsDisplay({ results }: ResultsDisplayProps) {
+  const [selectedCategory, setSelectedCategory] = useState<keyof typeof results>("Behavioral");
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
   if (!results) return null;
   const maxRows = Math.max(
     results.Behavioral.length,
     results.Technical.length,
     results.General.length
   );
-
-  const [selectedCategory, setSelectedCategory] = useState<keyof typeof results>("Behavioral");
-  const [selectedIndex, setSelectedIndex] = useState(0);
 
   const qa = results[selectedCategory][selectedIndex];
 
