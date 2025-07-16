@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Define interfaces for better type safety
+interface AIServiceError extends Error {
+  code?: string;
+  status?: number;
+  response?: {
+    status: number;
+    statusText: string;
+    data?: unknown;
+  };
+}
+
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
@@ -87,14 +98,16 @@ Respond with ONLY the structured summary in bullet point format. Do not include 
         summaryLength: aiResponse.length
       });
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTimeout(timeout);
-      console.error("[DEBUG] AI service error:", err);
+      const error = err as AIServiceError;
+      console.error("[DEBUG] AI service error:", error.message || error);
       return NextResponse.json({ success: false, error: "AI service error. Please try again later." }, { status: 500 });
     }
     
-  } catch (err: any) {
-    console.error("CV summarization API error:", err);
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("CV summarization API error:", error.message || error);
     return NextResponse.json({ 
       success: false, 
       error: "Something went wrong - please refresh and try again." 
