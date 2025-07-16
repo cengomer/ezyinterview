@@ -4,6 +4,16 @@ import { getAuth } from "firebase-admin/auth";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { User } from "firebase/auth";
 
+// Define interfaces for better type safety
+interface DecodedToken {
+  uid: string;
+  email?: string;
+  email_verified?: boolean;
+  name?: string;
+  picture?: string;
+  phone_number?: string;
+}
+
 interface CVProfile {
   summary: string;
   fileName: string;
@@ -31,7 +41,7 @@ export async function GET(req: NextRequest) {
     }
 
     const token = authHeader.split("Bearer ")[1];
-    let decodedToken;
+    let decodedToken: DecodedToken;
     
     try {
       decodedToken = await getAuth().verifyIdToken(token);
@@ -40,25 +50,36 @@ export async function GET(req: NextRequest) {
     }
 
     // Create a User object with all required properties
-    const user = {
+    const user: User = {
       uid: decodedToken.uid,
-      email: decodedToken.email,
-      emailVerified: decodedToken.email_verified || false,
-      displayName: decodedToken.name || null,
-      photoURL: decodedToken.picture || null,
-      phoneNumber: decodedToken.phone_number || null,
+      email: decodedToken.email ?? null,
+      emailVerified: decodedToken.email_verified ?? false,
+      displayName: decodedToken.name ?? null,
+      photoURL: decodedToken.picture ?? null,
+      phoneNumber: decodedToken.phone_number ?? null,
       providerId: 'firebase',
       isAnonymous: false,
-      metadata: {},
+      metadata: {
+        creationTime: '',
+        lastSignInTime: ''
+      },
       providerData: [],
       refreshToken: '',
       tenantId: null,
       delete: async () => { throw new Error('Not implemented'); },
       getIdToken: async () => token,
-      getIdTokenResult: async () => ({ claims: {}, token: '', authTime: '', issuedAtTime: '', expirationTime: '', signInProvider: null }),
+      getIdTokenResult: async () => ({ 
+        claims: {}, 
+        token: '', 
+        authTime: '', 
+        issuedAtTime: '', 
+        expirationTime: '', 
+        signInProvider: null,
+        signInSecondFactor: null
+      }),
       reload: async () => {},
       toJSON: () => ({ uid: decodedToken.uid })
-    } as unknown as User;  // Use double assertion to bypass type checking since we know this is safe for our use case
+    };
 
     const cvProfile = await getCVProfile(user);
     
