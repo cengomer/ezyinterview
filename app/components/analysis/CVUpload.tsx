@@ -1,5 +1,6 @@
 "use client";
 import React, { useRef } from "react";
+import ErrorMessage from "../shared/ErrorMessage";
 
 export default function CVUpload({
   file,
@@ -58,6 +59,7 @@ export default function CVUpload({
           <span className="font-medium">Selected:</span> {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
         </div>
       )}
+      <ErrorMessage message={error} />
     </section>
   );
 }
