@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../hooks/useAuth";
 import AuthenticatedLayout from "../components/AuthenticatedLayout";
 import CVUpload from "../components/analysis/CVUpload";
@@ -7,6 +7,7 @@ import ErrorMessage from "../components/analysis/ErrorMessage";
 import Spinner from "../components/analysis/Spinner";
 import { saveCVProfile, getCVProfile, CVProfile } from "../../utils/saveCVProfile";
 import RequireAuth from "../components/auth/RequireAuth";
+import { FirebaseError } from "firebase/app";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -18,14 +19,7 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Load existing CV profile on component mount
-  useEffect(() => {
-    if (user) {
-      loadCVProfile();
-    }
-  }, [user]);
-
-  const loadCVProfile = async () => {
+  const loadCVProfile = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -34,7 +28,14 @@ export default function ProfilePage() {
     } catch (err) {
       console.error("Failed to load CV profile:", err);
     }
-  };
+  }, [user]);
+
+  // Load existing CV profile on component mount
+  useEffect(() => {
+    if (user) {
+      loadCVProfile();
+    }
+  }, [user, loadCVProfile]);
 
   const handleCVUpload = async (file: File | null) => {
     if (!file) {
@@ -66,7 +67,8 @@ export default function ProfilePage() {
         setCvSummary("");
         setError(null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      console.error("CV upload error:", err);
       setError("Something went wrong - please refresh and try again.");
       setCvFile(null);
       setExtractedCVText("");
@@ -102,7 +104,8 @@ export default function ProfilePage() {
         setCvSummary(data.summary);
         setError(null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      console.error("Summary generation error:", err);
       setError("Something went wrong - please refresh and try again.");
     } finally {
       setLoading(false);
@@ -129,8 +132,13 @@ export default function ProfilePage() {
       
       setSuccess("CV profile saved successfully! You can now use this for generating interview questions.");
       await loadCVProfile(); // Reload the saved profile
-    } catch (err: any) {
-      setError("Failed to save CV profile. Please try again.");
+    } catch (err: unknown) {
+      console.error("Save CV profile error:", err);
+      if (err instanceof FirebaseError) {
+        setError(`Failed to save CV profile: ${err.message}`);
+      } else {
+        setError("Failed to save CV profile. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -158,8 +166,13 @@ export default function ProfilePage() {
       setExtractedCVText("");
       setCvSummary("");
       setSuccess("CV profile deleted successfully.");
-    } catch (err: any) {
-      setError("Failed to delete CV profile. Please try again.");
+    } catch (err: unknown) {
+      console.error("Delete CV profile error:", err);
+      if (err instanceof FirebaseError) {
+        setError(`Failed to delete CV profile: ${err.message}`);
+      } else {
+        setError("Failed to delete CV profile. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -204,7 +217,7 @@ export default function ProfilePage() {
                     {loading ? "Deleting..." : "Delete CV Profile"}
                   </button>
                   <p className="text-sm text-gray-600 self-center">
-                    You can now go to "New Analysis" to generate questions using this CV.
+                    You can now go to &quot;New Analysis&quot; to generate questions using this CV.
                   </p>
                 </div>
               </div>
