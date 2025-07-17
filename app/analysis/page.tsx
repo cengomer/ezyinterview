@@ -60,6 +60,7 @@ export default function AnalysisPage() {
       setLoading(true);
       setError(null);
 
+      console.log('Sending request to generate questions...');
       const response = await fetch('/api/generate-questions', {
         method: 'POST',
         headers: {
@@ -73,6 +74,7 @@ export default function AnalysisPage() {
       });
 
       const data = await response.json();
+      console.log('Received response:', data);
 
       if (data.success) {
         const results = data.data.results;
@@ -92,11 +94,12 @@ export default function AnalysisPage() {
           console.error('Error saving to history:', error);
         }
       } else {
-        throw new Error(data.error || 'Failed to generate questions');
+        console.error('Failed to generate questions:', data.error);
+        throw new Error(data.error || 'Failed to generate questions. Please try again.');
       }
     } catch (error) {
       console.error('Question generation error:', error);
-      setError('Failed to generate questions. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to generate questions. Please try again.');
     } finally {
       setLoading(false);
     }
