@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate questions using OpenRouter API
-    const prompt = `As an expert interviewer, analyze this CV and job description to generate relevant interview questions and suggest answers based on the CV content.
+    const prompt = `You are an expert interviewer. Your task is to analyze a CV and job description to generate interview questions and answers. Respond ONLY with a JSON object in the exact format shown below - no additional text or explanation.
 
 CV Content:
 ${body.cv}
@@ -35,19 +35,46 @@ ${body.cv}
 Job Description:
 ${body.jobDescription}
 
-Generate three types of questions:
-1. Behavioral questions that assess soft skills and past experiences
-2. Technical questions specific to the required skills and technologies
-3. General questions about career goals and job fit
-
-For each question, provide an answer based on the information in the CV. Format the response as a JSON object with this exact structure:
+Required JSON format:
 {
-  "Behavioral": [{"question": "...", "answer": "..."}],
-  "Technical": [{"question": "...", "answer": "..."}],
-  "General": [{"question": "...", "answer": "..."}]
+  "Behavioral": [
+    {
+      "question": "behavioral question 1",
+      "answer": "answer based on CV 1"
+    },
+    {
+      "question": "behavioral question 2",
+      "answer": "answer based on CV 2"
+    }
+  ],
+  "Technical": [
+    {
+      "question": "technical question 1",
+      "answer": "answer based on CV 1"
+    },
+    {
+      "question": "technical question 2",
+      "answer": "answer based on CV 2"
+    }
+  ],
+  "General": [
+    {
+      "question": "general question 1",
+      "answer": "answer based on CV 1"
+    },
+    {
+      "question": "general question 2",
+      "answer": "answer based on CV 2"
+    }
+  ]
 }
 
-Each category should have 2-3 questions. Make answers specific to the candidate's CV.`;
+Rules:
+1. Generate exactly 2 questions for each category
+2. Base answers on specific information from the CV
+3. Technical questions should match job requirements
+4. Return ONLY the JSON - no other text
+5. Ensure valid JSON format with proper quotes and commas`;
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -84,17 +111,37 @@ Each category should have 2-3 questions. Make answers specific to the candidate'
     }
 
     const content = aiResponse.choices[0].message.content;
-    
+    console.log('Raw AI response:', content); // Add this for debugging
+
     // Parse the JSON response from the AI
     let results: AnalysisResults;
     try {
-      results = JSON.parse(content);
+      // Try to extract JSON if it's wrapped in other text
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonContent = jsonMatch ? jsonMatch[0] : content;
+      
+      results = JSON.parse(jsonContent);
       
       // Validate the response structure
       if (!results.Behavioral || !results.Technical || !results.General) {
         console.error('Invalid results structure:', results);
         throw new Error('Invalid response structure from AI');
       }
+
+      // Validate each category has questions
+      if (!Array.isArray(results.Behavioral) || !Array.isArray(results.Technical) || !Array.isArray(results.General)) {
+        throw new Error('Invalid question array structure');
+      }
+
+      // Ensure each question has required fields
+      const validateQuestions = (questions: any[]) => {
+        return questions.every(q => typeof q.question === 'string' && typeof q.answer === 'string');
+      };
+
+      if (!validateQuestions(results.Behavioral) || !validateQuestions(results.Technical) || !validateQuestions(results.General)) {
+        throw new Error('Invalid question format');
+      }
+
     } catch (error) {
       console.error('Error parsing AI response:', error);
       console.error('Raw content:', content);
