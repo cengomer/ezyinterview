@@ -26,8 +26,6 @@ export async function POST(request: NextRequest) {
       throw new Error('OpenRouter API key not configured');
     }
 
-    console.log('Generating questions for CV length:', body.cv.length, 'and job description length:', body.jobDescription.length);
-
     // Generate questions using OpenRouter API
     const prompt = `As an expert interviewer, analyze this CV and job description to generate relevant interview questions and suggest answers based on the CV content.
 
@@ -51,26 +49,20 @@ For each question, provide an answer based on the information in the CV. Format 
 
 Each category should have 2-3 questions. Make answers specific to the candidate's CV.`;
 
-    console.log('Making request to OpenRouter API...');
-
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://ezyinterview.vercel.app',
-        'OR-ORGANIZATION-ID': 'ezyinterview'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'anthropic/claude-2',
+        model: 'deepseek/deepseek-r1-0528:free',
         messages: [
           {
             role: 'user',
             content: prompt
           }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
+        ]
       })
     });
 
@@ -84,7 +76,6 @@ Each category should have 2-3 questions. Make answers specific to the candidate'
       throw new Error(`OpenRouter API error: ${response.statusText}`);
     }
 
-    console.log('Received response from OpenRouter API');
     const aiResponse = await response.json();
     
     if (!aiResponse.choices?.[0]?.message?.content) {
@@ -93,7 +84,6 @@ Each category should have 2-3 questions. Make answers specific to the candidate'
     }
 
     const content = aiResponse.choices[0].message.content;
-    console.log('Parsing AI response content...');
     
     // Parse the JSON response from the AI
     let results: AnalysisResults;
@@ -105,8 +95,6 @@ Each category should have 2-3 questions. Make answers specific to the candidate'
         console.error('Invalid results structure:', results);
         throw new Error('Invalid response structure from AI');
       }
-
-      console.log('Successfully generated questions');
     } catch (error) {
       console.error('Error parsing AI response:', error);
       console.error('Raw content:', content);
