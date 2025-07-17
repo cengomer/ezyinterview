@@ -26,9 +26,13 @@ export async function saveHistory(params: SaveHistoryParams): Promise<void> {
       body: JSON.stringify(params),
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to save history');
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Failed to save history');
     }
+
+    console.log('History saved successfully with ID:', data.id);
   } catch (error) {
     console.error('Error saving history:', error);
     throw error;
