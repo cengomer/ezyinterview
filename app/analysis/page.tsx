@@ -66,7 +66,7 @@ export default function AnalysisPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cv: cvProfile.content,
+          cv: cvProfile.extractedText,
           jobDescription,
           title,
         }),
@@ -81,7 +81,7 @@ export default function AnalysisPage() {
         try {
           await saveHistory({
             jobDescription,
-            cvContent: cvProfile.content,
+            cvContent: cvProfile.extractedText,
             results: data.results,
             title: title.trim() || jobDescription.split("\n")[0].slice(0, 80),
             timestamp: new Date().toISOString()
