@@ -1,9 +1,9 @@
 export interface CVProfile {
-  id: string;
-  userId: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
+  summary: string;
+  fileName: string;
+  fileSize: number;
+  extractedText: string;
+  updatedAt: any; // Firestore timestamp
 }
 
 export interface AnalysisResults {

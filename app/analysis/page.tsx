@@ -25,11 +25,16 @@ export default function AnalysisPage() {
     
     try {
       setLoading(true);
-      const response = await fetch('/api/get-cv-profile');
+      const token = await user.getIdToken();
+      const response = await fetch('/api/get-cv-profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await response.json();
       
       if (data.success) {
-        setCvProfile(data.profile);
+        setCvProfile(data.cvProfile);
       } else {
         setError(data.error || 'Failed to load CV profile');
       }

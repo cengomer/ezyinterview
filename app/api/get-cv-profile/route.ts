@@ -87,12 +87,14 @@ export async function GET(req: NextRequest) {
       }, { status: 404 });
     }
 
-    const response: { success: true; cvProfile: Pick<CVProfile, 'summary' | 'fileName' | 'updatedAt'> } = {
+    const response = {
       success: true,
       cvProfile: {
         summary: cvProfile.summary,
         fileName: cvProfile.fileName,
         updatedAt: cvProfile.updatedAt,
+        extractedText: cvProfile.extractedText,
+        fileSize: cvProfile.fileSize
       }
     };
 
