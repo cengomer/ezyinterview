@@ -75,14 +75,15 @@ export default function AnalysisPage() {
       const data = await response.json();
 
       if (data.success) {
-        setResults(data.results);
+        const results = data.data.results;
+        setResults(results);
         
         // Save to history after successful generation
         try {
           await saveHistory({
             jobDescription,
             cvContent: cvProfile.extractedText,
-            results: data.results,
+            results: results,
             title: title.trim() || jobDescription.split("\n")[0].slice(0, 80),
             timestamp: new Date().toISOString()
           });

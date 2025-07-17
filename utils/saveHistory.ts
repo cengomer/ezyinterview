@@ -12,6 +12,16 @@ interface SaveHistoryParams {
 
 export async function saveHistory(params: SaveHistoryParams): Promise<void> {
   try {
+    // Validate required fields
+    if (!params.jobDescription || !params.cvContent || !params.results) {
+      throw new Error('Missing required fields for history');
+    }
+
+    // Validate results structure
+    if (!params.results.Behavioral || !params.results.Technical || !params.results.General) {
+      throw new Error('Invalid results structure');
+    }
+
     const token = await auth.currentUser?.getIdToken();
     if (!token) {
       throw new Error('Not authenticated');
@@ -23,7 +33,13 @@ export async function saveHistory(params: SaveHistoryParams): Promise<void> {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify(params),
+      body: JSON.stringify({
+        jobDescription: params.jobDescription,
+        cvContent: params.cvContent,
+        results: params.results,
+        title: params.title || '',
+        timestamp: params.timestamp
+      }),
     });
 
     const data = await response.json();
