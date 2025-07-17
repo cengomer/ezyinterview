@@ -7,16 +7,6 @@ interface GenerateQuestionsRequest {
   title?: string;
 }
 
-interface QuestionMatch {
-  question: string;
-  score: number;
-}
-
-interface AnswerMatch {
-  answer: string;
-  score: number;
-}
-
 interface GenerateResponse {
   results: AnalysisResults;
 }
@@ -31,11 +21,73 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Mock AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error('OpenRouter API key not configured');
+    }
 
-    // Process the CV and job description to generate questions
-    const results = await generateQuestions(body.cv, body.jobDescription);
+    // Generate questions using OpenRouter API
+    const prompt = `As an expert interviewer, analyze this CV and job description to generate relevant interview questions and suggest answers based on the CV content.
+
+CV Content:
+${body.cv}
+
+Job Description:
+${body.jobDescription}
+
+Generate three types of questions:
+1. Behavioral questions that assess soft skills and past experiences
+2. Technical questions specific to the required skills and technologies
+3. General questions about career goals and job fit
+
+For each question, provide an answer based on the information in the CV. Format the response as a JSON object with this exact structure:
+{
+  "Behavioral": [{"question": "...", "answer": "..."}],
+  "Technical": [{"question": "...", "answer": "..."}],
+  "General": [{"question": "...", "answer": "..."}]
+}
+
+Each category should have 2-3 questions. Make answers specific to the candidate's CV.`;
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://ezyinterview.vercel.app',
+      },
+      body: JSON.stringify({
+        model: 'anthropic/claude-2',
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate questions');
+    }
+
+    const aiResponse = await response.json();
+    const content = aiResponse.choices[0].message.content;
+    
+    // Parse the JSON response from the AI
+    let results: AnalysisResults;
+    try {
+      results = JSON.parse(content);
+      
+      // Validate the response structure
+      if (!results.Behavioral || !results.Technical || !results.General) {
+        throw new Error('Invalid response structure from AI');
+      }
+    } catch (error) {
+      console.error('Error parsing AI response:', error);
+      throw new Error('Failed to parse AI response');
+    }
 
     return NextResponse.json<SuccessResponse<GenerateResponse>>({
       success: true,
@@ -48,68 +100,4 @@ export async function POST(request: NextRequest) {
       error: error instanceof Error ? error.message : 'Failed to generate questions'
     }, { status: 500 });
   }
-}
-
-async function generateQuestions(cv: string, jobDescription: string): Promise<AnalysisResults> {
-  // Mock question generation logic
-  const behavioralQuestions = [
-    {
-      question: "Tell me about a challenging project you worked on.",
-      answer: "Focus on describing the challenge, your actions, and the positive outcome."
-    },
-    {
-      question: "How do you handle tight deadlines?",
-      answer: "Explain your time management and prioritization strategies."
-    }
-  ];
-
-  const technicalQuestions = [
-    {
-      question: "Explain your experience with the technologies mentioned in your CV.",
-      answer: "Highlight specific projects and technical challenges you've overcome."
-    },
-    {
-      question: "How do you stay updated with industry trends?",
-      answer: "Discuss your learning methods and professional development."
-    }
-  ];
-
-  const generalQuestions = [
-    {
-      question: "Why are you interested in this position?",
-      answer: "Connect your skills and experience to the job requirements."
-    },
-    {
-      question: "Where do you see yourself in 5 years?",
-      answer: "Align your career goals with the company's growth opportunities."
-    }
-  ];
-
-  // Process CV and job description to find relevant matches
-  const questionKeywords = extractKeywords(cv);
-  const answerKeywords = extractKeywords(jobDescription);
-
-  // Find matches (currently unused in mock implementation)
-  findMatches(questionKeywords);
-  findMatches(answerKeywords);
-
-  return {
-    Behavioral: behavioralQuestions,
-    Technical: technicalQuestions,
-    General: generalQuestions
-  };
-}
-
-function extractKeywords(text: string): string[] {
-  // Mock keyword extraction
-  return text.toLowerCase().split(/\s+/).filter(Boolean);
-}
-
-function findMatches(keywords: string[]): Array<QuestionMatch | AnswerMatch> {
-  // Mock matching logic
-  return keywords.map(keyword => ({
-    question: `Question about ${keyword}`,
-    answer: `Sample answer about ${keyword}`,
-    score: Math.random()
-  }));
 }
