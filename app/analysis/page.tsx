@@ -109,6 +109,20 @@ export default function AnalysisPage() {
           
           {error && <ErrorMessage message={error} />}
           
+          {/* CV Profile Display */}
+          {cvProfile && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h2 className="text-lg font-semibold text-blue-800 mb-2">Active CV Profile</h2>
+              <div className="text-sm text-blue-700">
+                <p>File: {cvProfile.fileName}</p>
+                <p>Size: {(cvProfile.fileSize / 1024 / 1024).toFixed(2)} MB</p>
+                <p className="mt-2 text-blue-600">
+                  Questions will be generated based on this CV. You can update your CV in the Profile section.
+                </p>
+              </div>
+            </div>
+          )}
+          
           <div className="space-y-6">
             <JobDescriptionInput
               value={jobDescription}
