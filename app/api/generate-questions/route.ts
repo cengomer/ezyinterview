@@ -164,56 +164,77 @@ Rules:
         
         // Remove any markdown code block markers if present
         jsonContent = jsonContent.replace(/```json\n?|\n?```/g, '');
+        jsonContent = jsonContent.replace(/```\n?|\n?```/g, '');
         
         // Try to extract JSON if it's wrapped in other text
         const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
-          console.error('No JSON object found in response');
+          console.error('No JSON object found in response. Raw content:', jsonContent);
           throw new Error('Invalid response format from AI');
         }
         
         // Parse the extracted JSON
-        results = JSON.parse(jsonMatch[0]);
+        const jsonStr = jsonMatch[0].trim();
+        console.log('Attempting to parse JSON:', jsonStr);
+        
+        results = JSON.parse(jsonStr);
         
         // Validate the response structure
+        if (!results || typeof results !== 'object') {
+          throw new Error('Invalid response structure - not an object');
+        }
+
         if (!results.Behavioral || !results.Technical || !results.General) {
-          console.error('Invalid results structure:', results);
-          throw new Error('Invalid response structure from AI');
+          console.error('Missing required categories in results:', Object.keys(results));
+          throw new Error('Invalid response structure - missing categories');
         }
 
         // Validate each category has questions
         if (!Array.isArray(results.Behavioral) || !Array.isArray(results.Technical) || !Array.isArray(results.General)) {
+          console.error('Categories are not arrays:', {
+            Behavioral: Array.isArray(results.Behavioral),
+            Technical: Array.isArray(results.Technical),
+            General: Array.isArray(results.General)
+          });
           throw new Error('Invalid question array structure');
+        }
+
+        // Ensure each category has the correct number of questions
+        if (results.Behavioral.length !== 4 || results.Technical.length !== 4 || results.General.length !== 4) {
+          console.error('Wrong number of questions:', {
+            Behavioral: results.Behavioral.length,
+            Technical: results.Technical.length,
+            General: results.General.length
+          });
+          throw new Error('Invalid number of questions');
         }
 
         // Ensure each question has required fields
         const validateQuestions = (questions: any[]) => {
-          return questions.every(q => typeof q.question === 'string' && typeof q.answer === 'string');
+          return questions.every(q => {
+            const isValid = typeof q.question === 'string' && 
+                          typeof q.answer === 'string' &&
+                          q.question.trim() !== '' &&
+                          q.answer.trim() !== '';
+            if (!isValid) {
+              console.error('Invalid question format:', q);
+            }
+            return isValid;
+          });
         };
 
-        if (!validateQuestions(results.Behavioral) || !validateQuestions(results.Technical) || !validateQuestions(results.General)) {
-          throw new Error('Invalid question format');
+        const validBehavioral = validateQuestions(results.Behavioral);
+        const validTechnical = validateQuestions(results.Technical);
+        const validGeneral = validateQuestions(results.General);
+
+        if (!validBehavioral || !validTechnical || !validGeneral) {
+          throw new Error('Invalid question format - missing or empty fields');
         }
 
       } catch (error) {
         console.error('Error parsing AI response:', error);
         console.error('Raw content:', content);
-        
-        // Try to clean up the response and parse again
-        try {
-          // Remove any non-JSON text before and after the JSON object
-          const cleanContent = content.replace(/^[^{]*({[\s\S]*})[^}]*$/, '$1');
-          results = JSON.parse(cleanContent);
-          
-          // Validate the cleaned response
-          if (!results.Behavioral || !results.Technical || !results.General ||
-              !Array.isArray(results.Behavioral) || !Array.isArray(results.Technical) || !Array.isArray(results.General)) {
-            throw new Error('Invalid response structure');
-          }
-        } catch (cleanupError) {
-          console.error('Failed to clean and parse response:', cleanupError);
-          throw new Error('Failed to parse AI response - invalid format');
-        }
+        throw new Error(error instanceof Error ? error.message : 'Failed to parse AI response');
       }
 
       return NextResponse.json<SuccessResponse<GenerateResponse>>({

@@ -73,11 +73,23 @@ export default function AnalysisPage() {
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to generate questions:', errorData);
+        throw new Error(errorData.error || 'Failed to generate questions');
+      }
+
       const data = await response.json();
       console.log('Received response:', data);
 
-      if (data.success) {
+      if (data.success && data.data?.results) {
         const results = data.data.results;
+        
+        // Validate results structure
+        if (!results.Behavioral?.length || !results.Technical?.length || !results.General?.length) {
+          throw new Error('Invalid response format - missing questions');
+        }
+
         setResults(results);
         
         // Save to history after successful generation
@@ -94,7 +106,7 @@ export default function AnalysisPage() {
           console.error('Error saving to history:', error);
         }
       } else {
-        console.error('Failed to generate questions:', data.error);
+        console.error('Failed to generate questions:', data);
         throw new Error(data.error || 'Failed to generate questions. Please try again.');
       }
     } catch (error) {
