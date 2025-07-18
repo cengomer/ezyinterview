@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate questions using OpenRouter API
-    const prompt = `You are an expert interviewer. Your task is to analyze a CV and job description to generate interview questions and answers. Respond ONLY with a JSON object in the exact format shown below - no additional text or explanation.
+    const prompt = `You are an expert interviewer. Your task is to analyze a CV and job description to generate interview questions and answers. You must respond with ONLY a valid JSON object - no other text, no markdown, no explanations.
 
 CV Content:
 ${body.cv}
@@ -97,10 +97,12 @@ Rules:
 1. Generate exactly 4 questions for each category
 2. Base answers on specific information from the CV
 3. Technical questions should match job requirements
-4. Return ONLY the JSON - no other text
+4. Return ONLY the JSON object above - no other text, no markdown formatting
 5. The Answers Should should be detailed and specific to the CV and job description
 6. Always Follow the STAR method for answers
-7. Ensure valid JSON format with proper quotes and commas`;
+7. Ensure valid JSON format with proper quotes and commas
+8. Do not include any text before or after the JSON object
+9. Do not wrap the response in code blocks or markdown`;
 
     // Set up timeout controller
     const controller = new AbortController();
@@ -157,11 +159,21 @@ Rules:
       // Parse the JSON response from the AI
       let results: AnalysisResults;
       try {
-        // Try to extract JSON if it's wrapped in other text
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        const jsonContent = jsonMatch ? jsonMatch[0] : content;
+        // Clean up the content to ensure it's valid JSON
+        let jsonContent = content.trim();
         
-        results = JSON.parse(jsonContent);
+        // Remove any markdown code block markers if present
+        jsonContent = jsonContent.replace(/```json\n?|\n?```/g, '');
+        
+        // Try to extract JSON if it's wrapped in other text
+        const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          console.error('No JSON object found in response');
+          throw new Error('Invalid response format from AI');
+        }
+        
+        // Parse the extracted JSON
+        results = JSON.parse(jsonMatch[0]);
         
         // Validate the response structure
         if (!results.Behavioral || !results.Technical || !results.General) {
@@ -186,7 +198,22 @@ Rules:
       } catch (error) {
         console.error('Error parsing AI response:', error);
         console.error('Raw content:', content);
-        throw new Error('Failed to parse AI response');
+        
+        // Try to clean up the response and parse again
+        try {
+          // Remove any non-JSON text before and after the JSON object
+          const cleanContent = content.replace(/^[^{]*({[\s\S]*})[^}]*$/, '$1');
+          results = JSON.parse(cleanContent);
+          
+          // Validate the cleaned response
+          if (!results.Behavioral || !results.Technical || !results.General ||
+              !Array.isArray(results.Behavioral) || !Array.isArray(results.Technical) || !Array.isArray(results.General)) {
+            throw new Error('Invalid response structure');
+          }
+        } catch (cleanupError) {
+          console.error('Failed to clean and parse response:', cleanupError);
+          throw new Error('Failed to parse AI response - invalid format');
+        }
       }
 
       return NextResponse.json<SuccessResponse<GenerateResponse>>({
