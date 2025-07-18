@@ -45,6 +45,14 @@ Required JSON format:
     {
       "question": "behavioral question 2",
       "answer": "answer based on CV 2"
+    },
+    {
+      "question": "behavioral question 3",
+      "answer": "answer based on CV 3"
+    },
+    {
+      "question": "behavioral question 4",
+      "answer": "answer based on CV 4"
     }
   ],
   "Technical": [
@@ -55,6 +63,14 @@ Required JSON format:
     {
       "question": "technical question 2",
       "answer": "answer based on CV 2"
+    },
+    {
+      "question": "technical question 3",
+      "answer": "answer based on CV 3"
+    },
+    {
+      "question": "technical question 4",
+      "answer": "answer based on CV 4"
     }
   ],
   "General": [
@@ -65,93 +81,128 @@ Required JSON format:
     {
       "question": "general question 2",
       "answer": "answer based on CV 2"
+    },
+    {
+      "question": "general question 3",
+      "answer": "answer based on CV 3"
+    },
+    {
+      "question": "general question 4",
+      "answer": "answer based on CV 4"
     }
   ]
 }
 
 Rules:
-1. Generate exactly 2 questions for each category
+1. Generate exactly 4 questions for each category
 2. Base answers on specific information from the CV
 3. Technical questions should match job requirements
 4. Return ONLY the JSON - no other text
-5. Ensure valid JSON format with proper quotes and commas`;
+5. The Answers Should should be detailed and specific to the CV and job description
+6. Always Follow the STAR method for answers
+7. Ensure valid JSON format with proper quotes and commas`;
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'deepseek/deepseek-r1-0528:free',
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ]
-      })
-    });
+    // Set up timeout controller
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90000); // 90 seconds timeout
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('OpenRouter API error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData
-      });
-      throw new Error(`OpenRouter API error: ${response.statusText}`);
-    }
-
-    const aiResponse = await response.json();
-    
-    if (!aiResponse.choices?.[0]?.message?.content) {
-      console.error('Invalid AI response structure:', aiResponse);
-      throw new Error('Invalid response from AI service');
-    }
-
-    const content = aiResponse.choices[0].message.content;
-    console.log('Raw AI response:', content); // Add this for debugging
-
-    // Parse the JSON response from the AI
-    let results: AnalysisResults;
     try {
-      // Try to extract JSON if it's wrapped in other text
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      const jsonContent = jsonMatch ? jsonMatch[0] : content;
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'deepseek/deepseek-r1-0528:free',
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
+          stream: false,
+          frequency_penalty: 0,
+          presence_penalty: 0,
+          top_p: 0.9,
+          timeout: 90
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('OpenRouter API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        throw new Error(`OpenRouter API error: ${response.statusText}`);
+      }
+
+      const aiResponse = await response.json();
       
-      results = JSON.parse(jsonContent);
-      
-      // Validate the response structure
-      if (!results.Behavioral || !results.Technical || !results.General) {
-        console.error('Invalid results structure:', results);
-        throw new Error('Invalid response structure from AI');
+      if (!aiResponse.choices?.[0]?.message?.content) {
+        console.error('Invalid AI response structure:', aiResponse);
+        throw new Error('Invalid response from AI service');
       }
 
-      // Validate each category has questions
-      if (!Array.isArray(results.Behavioral) || !Array.isArray(results.Technical) || !Array.isArray(results.General)) {
-        throw new Error('Invalid question array structure');
+      const content = aiResponse.choices[0].message.content;
+      console.log('Raw AI response:', content);
+
+      // Parse the JSON response from the AI
+      let results: AnalysisResults;
+      try {
+        // Try to extract JSON if it's wrapped in other text
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        const jsonContent = jsonMatch ? jsonMatch[0] : content;
+        
+        results = JSON.parse(jsonContent);
+        
+        // Validate the response structure
+        if (!results.Behavioral || !results.Technical || !results.General) {
+          console.error('Invalid results structure:', results);
+          throw new Error('Invalid response structure from AI');
+        }
+
+        // Validate each category has questions
+        if (!Array.isArray(results.Behavioral) || !Array.isArray(results.Technical) || !Array.isArray(results.General)) {
+          throw new Error('Invalid question array structure');
+        }
+
+        // Ensure each question has required fields
+        const validateQuestions = (questions: any[]) => {
+          return questions.every(q => typeof q.question === 'string' && typeof q.answer === 'string');
+        };
+
+        if (!validateQuestions(results.Behavioral) || !validateQuestions(results.Technical) || !validateQuestions(results.General)) {
+          throw new Error('Invalid question format');
+        }
+
+      } catch (error) {
+        console.error('Error parsing AI response:', error);
+        console.error('Raw content:', content);
+        throw new Error('Failed to parse AI response');
       }
 
-      // Ensure each question has required fields
-      const validateQuestions = (questions: any[]) => {
-        return questions.every(q => typeof q.question === 'string' && typeof q.answer === 'string');
-      };
-
-      if (!validateQuestions(results.Behavioral) || !validateQuestions(results.Technical) || !validateQuestions(results.General)) {
-        throw new Error('Invalid question format');
-      }
+      return NextResponse.json<SuccessResponse<GenerateResponse>>({
+        success: true,
+        data: { results }
+      });
 
     } catch (error) {
-      console.error('Error parsing AI response:', error);
-      console.error('Raw content:', content);
-      throw new Error('Failed to parse AI response');
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error('Request timed out:', error);
+        return NextResponse.json<ErrorResponse>({
+          error: 'Request timed out. Please try again.'
+        }, { status: 504 });
+      }
+      throw error;
     }
-
-    return NextResponse.json<SuccessResponse<GenerateResponse>>({
-      success: true,
-      data: { results }
-    });
 
   } catch (error) {
     console.error('Error generating questions:', error);
