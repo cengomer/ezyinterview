@@ -55,7 +55,18 @@ Required format:
   ]
 }
 
-Rules: 4 questions per category. Base answers on CV. Technical questions match job requirements. Use STAR method for answers.`;
+Rules:
+1. Generate 4 questions per category
+2. Base answers on specific examples from the CV
+3. Technical questions must match job requirements
+4. Use STAR method for ALL answers:
+   - Situation: Describe the context
+   - Task: Explain the challenge/requirement
+   - Action: Detail specific actions taken
+   - Result: Quantify outcomes and learnings
+5. Answers must be detailed (minimum 3-4 sentences) and include specific examples
+6. NO one-line or generic answers like "Yes, I can do that" or "I am proficient in X"
+7. Each answer should demonstrate actual experience from the CV`;
 
     // Set up timeout controller
     const controller = new AbortController();
