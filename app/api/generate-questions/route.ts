@@ -27,82 +27,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate questions using OpenRouter API
-    const prompt = `You are an expert interviewer. Your task is to analyze a CV and job description to generate interview questions and answers. You must respond with ONLY a valid JSON object - no other text, no markdown, no explanations.
+    const prompt = `Generate interview questions based on this CV and job description. Return ONLY a JSON object with no additional text.
 
-CV Content:
-${body.cv}
+CV: ${body.cv}
 
-Job Description:
-${body.jobDescription}
+Job: ${body.jobDescription}
 
-Required JSON format:
+Required format:
 {
   "Behavioral": [
-    {
-      "question": "behavioral question 1",
-      "answer": "answer based on CV 1"
-    },
-    {
-      "question": "behavioral question 2",
-      "answer": "answer based on CV 2"
-    },
-    {
-      "question": "behavioral question 3",
-      "answer": "answer based on CV 3"
-    },
-    {
-      "question": "behavioral question 4",
-      "answer": "answer based on CV 4"
-    }
+    {"question": "...", "answer": "..."},
+    {"question": "...", "answer": "..."},
+    {"question": "...", "answer": "..."},
+    {"question": "...", "answer": "..."}
   ],
   "Technical": [
-    {
-      "question": "technical question 1",
-      "answer": "answer based on CV 1"
-    },
-    {
-      "question": "technical question 2",
-      "answer": "answer based on CV 2"
-    },
-    {
-      "question": "technical question 3",
-      "answer": "answer based on CV 3"
-    },
-    {
-      "question": "technical question 4",
-      "answer": "answer based on CV 4"
-    }
+    {"question": "...", "answer": "..."},
+    {"question": "...", "answer": "..."},
+    {"question": "...", "answer": "..."},
+    {"question": "...", "answer": "..."}
   ],
   "General": [
-    {
-      "question": "general question 1",
-      "answer": "answer based on CV 1"
-    },
-    {
-      "question": "general question 2",
-      "answer": "answer based on CV 2"
-    },
-    {
-      "question": "general question 3",
-      "answer": "answer based on CV 3"
-    },
-    {
-      "question": "general question 4",
-      "answer": "answer based on CV 4"
-    }
+    {"question": "...", "answer": "..."},
+    {"question": "...", "answer": "..."},
+    {"question": "...", "answer": "..."},
+    {"question": "...", "answer": "..."}
   ]
 }
 
-Rules:
-1. Generate exactly 4 questions for each category
-2. Base answers on specific information from the CV
-3. Technical questions should match job requirements
-4. Return ONLY the JSON object above - no other text, no markdown formatting
-5. The Answers Should should be detailed and specific to the CV and job description
-6. Always Follow the STAR method for answers
-7. Ensure valid JSON format with proper quotes and commas
-8. Do not include any text before or after the JSON object
-9. Do not wrap the response in code blocks or markdown`;
+Rules: 4 questions per category. Base answers on CV. Technical questions match job requirements. Use STAR method for answers.`;
 
     // Set up timeout controller
     const controller = new AbortController();
@@ -113,25 +66,23 @@ Rules:
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://ezyinterview.vercel.app'
         },
         body: JSON.stringify({
-          model: 'deepseek/deepseek-r1-0528:free',
+          model: 'mistralai/mistral-7b-instruct:free',
           messages: [
             {
               role: 'user',
               content: prompt
             }
           ],
-          temperature: 0.7,
-          max_tokens: 2000,
-          stream: false,
-          frequency_penalty: 0,
-          presence_penalty: 0,
-          top_p: 0.9,
-          timeout: 90
-        }),
-        signal: controller.signal
+          temperature: 0.3,
+          max_tokens: 1500,
+          top_p: 0.8,
+          frequency_penalty: 0.2,
+          presence_penalty: 0.1
+        })
       });
 
       clearTimeout(timeout);
