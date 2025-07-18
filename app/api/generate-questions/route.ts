@@ -172,12 +172,19 @@ Rules:
         }
 
         // Ensure each question has required fields
-        const validateQuestions = (questions: any[]) => {
+        interface QuestionAnswer {
+          question: string;
+          answer: string;
+        }
+
+        const validateQuestions = (questions: unknown[]): questions is QuestionAnswer[] => {
           return questions.every(q => {
-            const isValid = typeof q.question === 'string' && 
-                          typeof q.answer === 'string' &&
-                          q.question.trim() !== '' &&
-                          q.answer.trim() !== '';
+            if (typeof q !== 'object' || q === null) return false;
+            const qa = q as { question?: unknown; answer?: unknown };
+            const isValid = typeof qa.question === 'string' && 
+                          typeof qa.answer === 'string' &&
+                          qa.question.trim() !== '' &&
+                          qa.answer.trim() !== '';
             if (!isValid) {
               console.error('Invalid question format:', q);
             }

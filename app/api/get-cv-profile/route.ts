@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCVProfile, CVProfile } from "../../../utils/saveCVProfile";
+import { getCVProfile } from "../../../utils/saveCVProfile";
 import { getAuth } from "firebase-admin/auth";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { User } from "firebase/auth";

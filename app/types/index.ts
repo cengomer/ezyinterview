@@ -3,7 +3,7 @@ export interface CVProfile {
   fileName: string;
   fileSize: number;
   extractedText: string;
-  updatedAt: any; // Firestore timestamp
+  updatedAt: Date | { seconds: number; nanoseconds: number }; // Firestore timestamp
 }
 
 export interface AnalysisResults {
