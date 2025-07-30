@@ -16,6 +16,23 @@ interface ExtractCVResponse {
   pages: number;
 }
 
+interface PDFPage {
+  Texts: PDFText[];
+}
+
+interface PDFText {
+  R: PDFTextRun[];
+  y: number;
+}
+
+interface PDFTextRun {
+  T: string;
+}
+
+interface PDFData {
+  Pages: PDFPage[];
+}
+
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
     const pdfParse = (await import("pdf-parse")).default;
@@ -32,19 +49,19 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     const PDFParser = (await import("pdf2json")).default;
     const pdfParser = new PDFParser();
     const text = await new Promise<string>((resolve, reject) => {
-      pdfParser.on("pdfParser_dataReady", (pdfData) => {
+      pdfParser.on("pdfParser_dataReady", (pdfData: PDFData) => {
         try {
           let text = "";
           if (pdfData.Pages && pdfData.Pages.length > 0) {
-            pdfData.Pages.forEach((page: any) => {
+            pdfData.Pages.forEach((page: PDFPage) => {
               if (page.Texts && page.Texts.length > 0) {
                 let currentLine = "";
                 let lastY: number | null = null;
                 
-                page.Texts.forEach((textItem: any) => {
+                page.Texts.forEach((textItem: PDFText) => {
                   if (textItem.R && textItem.R.length > 0) {
                     let word = "";
-                    textItem.R.forEach((r: any) => {
+                    textItem.R.forEach((r: PDFTextRun) => {
                       if (r.T) {
                         word += decodeURIComponent(r.T);
                       }
