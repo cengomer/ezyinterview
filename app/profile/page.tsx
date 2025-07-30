@@ -63,7 +63,7 @@ export default function ProfilePage() {
         setCvSummary("");
       } else {
         setCvFile(file);
-        setExtractedCVText(data.text);
+        setExtractedCVText(data.data.content);
         setCvSummary("");
         setError(null);
       }
