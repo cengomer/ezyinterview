@@ -50,7 +50,7 @@ export default function ProfilePage() {
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append("cvFile", file);
+      formData.append("file", file);
       const res = await fetch("/api/extract-cv", {
         method: "POST",
         body: formData,
